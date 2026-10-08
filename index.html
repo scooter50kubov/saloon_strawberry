@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light}body{margin:0}</style>
+<title>Кухня салуна</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Golos+Text:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: бухгалтерская книга салуна. Сверху итоги, ниже три шага по порядку работы: что готовим, склад и цены, заказ. */
+:root {
+  --bg: #e9ece3;
+  --surface: #f6f7f1;
+  --tint: #dfe4d8;
+  --ink: #1c2620;
+  --muted: #5a665d;
+  --line: #c6cdbf;
+  --accent: #2c6150;
+  --accent-ink: #f6f7f1;
+  --short: #9a2d2a;
+  --warn: #9a6b12;
+  --focus: #2c6150;
+  --f-display: 'Alfa Slab One', Georgia, serif;
+  --f-body: 'Golos Text', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-num: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121815;
+    --surface: #1a221e;
+    --tint: #212b26;
+    --ink: #e5e9e0;
+    --muted: #97a499;
+    --line: #2d3932;
+    --accent: #6fb596;
+    --accent-ink: #0f1613;
+    --short: #e48072;
+    --warn: #d6a84a;
+    --focus: #6fb596;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121815;
+  --surface: #1a221e;
+  --tint: #212b26;
+  --ink: #e5e9e0;
+  --muted: #97a499;
+  --line: #2d3932;
+  --accent: #6fb596;
+  --accent-ink: #0f1613;
+  --short: #e48072;
+  --warn: #d6a84a;
+  --focus: #6fb596;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1040px; margin-inline: auto; display: flex; flex-direction: column; gap: 40px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button, input, textarea { font: inherit; color: inherit; }
+
+/* Шапка */
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(2rem, 6vw, 3rem); line-height: 1.05; margin: 0 0 8px; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 60ch; }
+
+/* Итоги */
+.totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-top: 3px solid var(--ink); }
+.total { padding: 14px 16px 14px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.total + .total { padding-left: 16px; border-left: 1px solid var(--line); }
+.total .k { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.total .v { font-family: var(--f-num); font-size: 1.9rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
+.total .n { font-size: 12.5px; color: var(--warn); min-height: 1.2em; }
+.total.order .v { color: var(--short); }
+@media (max-width: 640px) {
+  .total + .total { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
+}
+
+/* Секции */
+.sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.sec-head .no { font-family: var(--f-display); color: var(--accent); font-size: 1.5rem; line-height: 1; }
+h2 { font-size: 1.3rem; font-weight: 600; margin: 0; }
+.sec-head p { margin: 0; color: var(--muted); font-size: 14px; flex-basis: 100%; max-width: 70ch; }
+h3.cat { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin: 20px 0 10px; }
+
+/* Блюда */
+.dish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.dish { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dish h4 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.recipe { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.recipe li { font-size: 13px; border: 1px solid var(--line); border-radius: 3px; padding: 1px 7px; background: var(--bg); }
+.recipe b { font-family: var(--f-num); font-weight: 600; margin-right: 3px; color: var(--accent); }
+.dish-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.stepper { display: inline-flex; align-items: stretch; border: 1px solid var(--ink); border-radius: 4px; overflow: hidden; }
+.stepper button { width: 38px; background: var(--surface); border: 0; cursor: pointer; font-size: 18px; line-height: 1; }
+.stepper button:hover { background: var(--tint); }
+.stepper input { width: 62px; border: 0; border-inline: 1px solid var(--line); text-align: center; font-family: var(--f-num); font-size: 16px; font-weight: 600; background: var(--bg); padding: 7px 4px; -moz-appearance: textfield; }
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cost { text-align: right; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cost strong { font-family: var(--f-num); color: var(--ink); font-weight: 600; }
+.cost .q { color: var(--warn); }
+.can { font-size: 12.5px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.can b { font-family: var(--f-num); color: var(--ink); }
+.hint { font-size: 13px; color: var(--muted); margin: 14px 0 0; }
+.row-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+.btn { border: 1px solid var(--ink); background: var(--surface); border-radius: 4px; padding: 7px 14px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--tint); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
+.btn.quiet { border-color: var(--line); color: var(--muted); }
+.btn[data-armed] { border-color: var(--short); color: var(--short); }
+
+/* Таблица ингредиентов */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 680px; font-variant-numeric: tabular-nums; }
+th { font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 500; text-align: right; padding: 10px 12px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1; }
+td { padding: 6px 12px; text-align: right; border-bottom: 1px solid var(--line); font-family: var(--f-num); font-size: 14px; }
+td:first-child { font-family: var(--f-body); font-size: 14.5px; min-width: 190px; }
+td:first-child small { display: block; font-size: 11.5px; color: var(--muted); letter-spacing: .02em; }
+tr.grp th { text-align: left; background: var(--tint); border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 600; position: static; }
+tr.idle td:not(:first-child):not(.in) { color: var(--muted); }
+td.short.is-short { color: var(--short); font-weight: 600; }
+td input { width: 84px; text-align: right; font-family: var(--f-num); font-size: 14px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); -moz-appearance: textfield; }
+td input::-webkit-outer-spin-button, td input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+td input.missing { border-color: var(--warn); border-style: dashed; }
+td input::placeholder { color: var(--warn); font-family: var(--f-body); font-size: 12px; }
+.note { font-size: 13px; color: var(--muted); margin: 12px 0 0; max-width: 78ch; }
+
+/* Заказ */
+.order-box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 16px 16px; }
+.order-list { list-style: none; margin: 0; padding: 0; }
+.order-list li { display: flex; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px dotted var(--muted); flex-wrap: wrap; }
+.order-list .nm { font-weight: 500; flex: 1 1 160px; min-width: 0; }
+.order-list .qty { font-family: var(--f-num); font-weight: 600; color: var(--short); min-width: 3.5em; text-align: right; }
+.order-list .calc { font-family: var(--f-num); font-size: 13px; color: var(--muted); }
+.order-list .sum { font-family: var(--f-num); min-width: 5.5em; text-align: right; }
+.order-list .sum.q { color: var(--warn); }
+.order-empty { padding: 18px 0 4px; color: var(--muted); }
+.order-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.order-foot .grand { font-family: var(--f-num); font-size: 1.3rem; font-weight: 600; }
+.status { font-size: 13px; color: var(--accent); min-height: 1.3em; }
+textarea { width: 100%; min-height: 110px; margin-top: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); font-family: var(--f-num); font-size: 12.5px; resize: vertical; }
+
+details.data { border-top: 1px solid var(--line); padding-top: 14px; }
+details.data summary { cursor: pointer; font-weight: 500; }
+details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .stepper button { transition: background-color .12s, filter .12s; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Red Dead Redemption 2 · Hate RP</p>
+    <h1>Кухня салуна</h1>
+    <p class="lede">Выберите, сколько порций каждого блюда готовите. Ниже будет видно, сколько нужно ингредиентов, сколько лежит на складе, чего не хватает и на какую сумму заказывать.</p>
+  </header>
+
+  <section class="totals" aria-label="Итоги">
+    <div class="total"><span class="k">Готовим</span><span class="v" id="tPortions">0</span><span class="n"></span></div>
+    <div class="total"><span class="k">Все ингредиенты</span><span class="v" id="tTotal">$0.00</span><span class="n" id="tTotalNote"></span></div>
+    <div class="total order"><span class="k">Докупить на</span><span class="v" id="tOrder">$0.00</span><span class="n" id="tOrderNote"></span></div>
+  </section>
+
+  <section id="s1">
+    <div class="sec-head">
+      <span class="no">1</span><h2>Что готовим</h2>
+      <p>Количество порций по каждому блюду. Рецепты в меню крафта те же, здесь они подписаны для сверки.</p>
+    </div>
+    <div id="dishes"></div>
+    <p class="hint">Стартовые числа это пример. Впишите свои или обнулите всё одним нажатием.</p>
+    <div class="row-actions"><button class="btn quiet" id="resetQty" type="button">Обнулить порции</button></div>
+  </section>
+
+  <section id="s2">
+    <div class="sec-head">
+      <span class="no">2</span><h2>Склад и цены</h2>
+      <p>Впишите, сколько каждого ингредиента лежит на складе. Цену за штуку можно менять в любой момент. Пустые поля цены подсвечены, пока вы их не заполните.</p>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Ингредиент</th><th>Нужно</th><th>На складе</th><th>Не хватает</th><th>Цена, $</th><th>Сумма</th></tr></thead>
+      <tbody id="ingBody"></tbody>
+    </table></div>
+    <p class="note">Цены растений взяты из вашего списка по секторам. Тимьян из списка записан как ползучий тимьян, морковь как дикая морковь, чеснок как дикий чеснок. Для воды, соли, муки, молотого кофе, мёда и мяса цен в списке не было, впишите их сами.</p>
+    <div class="row-actions"><button class="btn quiet" id="resetStock" type="button">Обнулить склад</button></div>
+  </section>
+
+  <section id="s3">
+    <div class="sec-head">
+      <span class="no">3</span><h2>Что заказать</h2>
+      <p>Список считается как нужное количество минус склад.</p>
+    </div>
+    <div class="order-box">
+      <ul class="order-list" id="orderList"></ul>
+      <div class="order-foot">
+        <div><span class="k" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Итого к заказу</span><div class="grand" id="orderGrand">$0.00</div></div>
+        <button class="btn primary" id="copyOrder" type="button">Скопировать список</button>
+      </div>
+      <div class="status" id="orderStatus" role="status"></div>
+      <textarea id="orderText" readonly hidden aria-label="Текст заказа"></textarea>
+    </div>
+  </section>
+
+  <details class="data">
+    <summary>Резервная копия данных</summary>
+    <p>Склад, цены и порции хранятся в этом браузере. Если вы очистите данные сайта или откроете страницу на другом устройстве, они пропадут. Скопируйте копию и сохраните её у себя, а потом вставьте сюда обратно.</p>
+    <div class="row-actions" style="margin-top:0">
+      <button class="btn" id="exportBtn" type="button">Скопировать копию</button>
+      <button class="btn" id="importBtn" type="button">Загрузить из поля</button>
+    </div>
+    <textarea id="backup" aria-label="Резервная копия" placeholder="Сюда вставьте ранее скопированную копию"></textarea>
+    <div class="status" id="backupStatus" role="status"></div>
+  </details>
+</div>
+
+<script>
+(function () {
+  var ING = [
+    { id: 'carrot', name: 'Дикая морковь', group: 'Растения и травы', sector: 1, price: 0.26 },
+    { id: 'garlic', name: 'Дикий чеснок', group: 'Растения и травы', sector: 1, price: 0.26 },
+    { id: 'oregano', name: 'Душица', group: 'Растения и травы', sector: 2, price: 0.25 },
+    { id: 'potato', name: 'Картофель', group: 'Растения и травы', sector: 1, price: 0.26 },
+    { id: 'corn', name: 'Кукуруза', group: 'Растения и травы', sector: 1, price: 0.27 },
+    { id: 'thyme', name: 'Ползучий тимьян', group: 'Растения и травы', sector: 1, price: 0.26 },
+    { id: 'cabbage', name: 'Капуста', group: 'Растения и травы', sector: 1, price: 0.26 },
+    { id: 'tomato', name: 'Томат', group: 'Растения и травы', sector: 1, price: 0.26 },
+    { id: 'spinach', name: 'Шпинат', group: 'Растения и травы', sector: 2, price: 0.25 },
+    { id: 'ginseng', name: 'Американский женьшень', group: 'Растения и травы', sector: 2, price: 0.24 },
+    { id: 'sugar', name: 'Сахар', group: 'Растения и травы', sector: 2, price: 0.25 },
+    { id: 'venison', name: 'Оленина', group: 'Мясо', price: null },
+    { id: 'game', name: 'Мясо дичи', group: 'Мясо', price: null },
+    { id: 'poultry', name: 'Мясо птицы', group: 'Мясо', price: null },
+    { id: 'water', name: 'Вода', group: 'Прочее', price: null },
+    { id: 'salt', name: 'Соль', group: 'Прочее', price: null },
+    { id: 'flour', name: 'Мука', group: 'Прочее', price: null },
+    { id: 'coffee', name: 'Молотый кофе', group: 'Прочее', price: null },
+    { id: 'honey', name: 'Мёд', group: 'Прочее', price: null }
+  ];
+  var BY = {}; ING.forEach(function (i) { BY[i.id] = i; });
+
+  var DISHES = [
+    { id: 'cherokee', cat: 'Еда', name: 'Суп чероки', def: 5, items: [['water',1],['carrot',1],['oregano',1],['potato',2],['corn',1],['venison',1],['thyme',1],['salt',1]] },
+    { id: 'potmeat', cat: 'Еда', name: 'Картошка с мясом', def: 5, items: [['carrot',2],['garlic',1],['potato',2],['game',1]] },
+    { id: 'tabaka', cat: 'Еда', name: 'Цыпленок табака', def: 5, items: [['water',1],['carrot',1],['oregano',2],['poultry',1]] },
+    { id: 'stew', cat: 'Еда', name: 'Неандертальское рагу', def: 5, items: [['cabbage',1],['venison',1],['salt',1],['tomato',1],['spinach',1]] },
+    { id: 'rabbit', cat: 'Еда', name: 'Жареный крол по-апачски', def: 5, items: [['water',1],['potato',1],['flour',1],['game',1],['salt',1]] },
+    { id: 'coffee', cat: 'Горячие напитки', name: 'Кофе', def: 10, items: [['water',1],['coffee',1]] },
+    { id: 'ginseng', cat: 'Горячие напитки', name: 'Чай из женьшеня', def: 5, items: [['ginseng',1],['water',1],['sugar',1]] },
+    { id: 'thymetea', cat: 'Горячие напитки', name: 'Чай из тимьяна', def: 5, items: [['water',1],['honey',2],['thyme',2]] }
+  ];
+
+  var KEY = 'saloon-kitchen-v1';
+  function fresh() {
+    var s = { qty: {}, stock: {}, price: {} };
+    DISHES.forEach(function (d) { s.qty[d.id] = d.def; });
+    ING.forEach(function (i) { s.stock[i.id] = 0; s.price[i.id] = i.price; });
+    return s;
+  }
+  var S = fresh();
+
+  function toInt(v) { var n = Math.floor(Number(v)); return isFinite(n) && n > 0 ? n : 0; }
+  function merge(o) {
+    if (!o || typeof o !== 'object') return false;
+    DISHES.forEach(function (d) { if (o.qty && d.id in o.qty) S.qty[d.id] = toInt(o.qty[d.id]); });
+    ING.forEach(function (i) {
+      if (o.stock && i.id in o.stock) S.stock[i.id] = toInt(o.stock[i.id]);
+      if (o.price && i.id in o.price) {
+        var p = o.price[i.id];
+        S.price[i.id] = (p === null || p === '' || !isFinite(Number(p)) || Number(p) < 0) ? null : Number(p);
+      }
+    });
+    return true;
+  }
+  try { var raw = localStorage.getItem(KEY); if (raw) merge(JSON.parse(raw)); } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  function fmt(n) { return '$' + n.toFixed(2); }
+  function pl(n, f) {
+    var a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return f[2];
+    if (b > 1 && b < 5) return f[1];
+    if (b === 1) return f[0];
+    return f[2];
+  }
+  function el(tag, attrs) {
+    var e = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'text') e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]);
+    });
+    for (var i = 2; i < arguments.length; i++) if (arguments[i]) e.appendChild(arguments[i]);
+    return e;
+  }
+  function $(id) { return document.getElementById(id); }
+
+  var refs = { dish: {}, row: {} };
+
+  /* Блюда */
+  var dishRoot = $('dishes');
+  var cats = [];
+  DISHES.forEach(function (d) { if (cats.indexOf(d.cat) < 0) cats.push(d.cat); });
+  cats.forEach(function (cat) {
+    dishRoot.appendChild(el('h3', { 'class': 'cat', text: cat }));
+    var grid = el('div', { 'class': 'dish-grid' });
+    DISHES.filter(function (d) { return d.cat === cat; }).forEach(function (d) {
+      var recipe = el('ul', { 'class': 'recipe' });
+      d.items.forEach(function (it) {
+        var li = el('li'); li.appendChild(el('b', { text: it[1] })); li.appendChild(document.createTextNode(BY[it[0]].name.toLowerCase()));
+        recipe.appendChild(li);
+      });
+      var minus = el('button', { type: 'button', 'aria-label': 'Меньше: ' + d.name, text: '−' });
+      var plus = el('button', { type: 'button', 'aria-label': 'Больше: ' + d.name, text: '+' });
+      var input = el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', id: 'q-' + d.id, 'aria-label': 'Порций: ' + d.name });
+      var stepper = el('div', { 'class': 'stepper' }, minus, input, plus);
+      var cost = el('div', { 'class': 'cost' });
+      var can = el('div', { 'class': 'can' });
+      grid.appendChild(el('article', { 'class': 'dish' }, el('h4', { text: d.name }), recipe, el('div', { 'class': 'dish-row' }, stepper, cost), can));
+      refs.dish[d.id] = { input: input, cost: cost, can: can };
+      function set(v) { S.qty[d.id] = toInt(v); save(); update(); }
+      minus.addEventListener('click', function () { set((S.qty[d.id] || 0) - 1); input.value = S.qty[d.id]; });
+      plus.addEventListener('click', function () { set((S.qty[d.id] || 0) + 1); input.value = S.qty[d.id]; });
+      input.addEventListener('input', function () { set(input.value); });
+      input.addEventListener('blur', function () { input.value = S.qty[d.id]; });
+    });
+    dishRoot.appendChild(grid);
+  });
+
+  /* Таблица ингредиентов */
+  var body = $('ingBody');
+  var groups = [];
+  ING.forEach(function (i) { if (groups.indexOf(i.group) < 0) groups.push(i.group); });
+  groups.forEach(function (g) {
+    var gt = el('th', { colspan: '6', text: g });
+    body.appendChild(el('tr', { 'class': 'grp' }, gt));
+    ING.filter(function (i) { return i.group === g; }).forEach(function (i) {
+      var nameTd = el('td', null, document.createTextNode(i.name));
+      if (i.sector) nameTd.appendChild(el('small', { text: 'сектор ' + i.sector }));
+      var need = el('td'), short = el('td', { 'class': 'short' }), sum = el('td');
+      var stockIn = el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', id: 's-' + i.id, 'aria-label': 'На складе: ' + i.name });
+      var priceIn = el('input', { type: 'number', min: '0', step: '0.01', inputmode: 'decimal', id: 'p-' + i.id, placeholder: 'впишите', 'aria-label': 'Цена за штуку: ' + i.name });
+      var tr = el('tr', null, nameTd, need, el('td', { 'class': 'in' }, stockIn), short, el('td', { 'class': 'in' }, priceIn), sum);
+      body.appendChild(tr);
+      refs.row[i.id] = { tr: tr, need: need, short: short, sum: sum, stockIn: stockIn, priceIn: priceIn };
+      stockIn.addEventListener('input', function () { S.stock[i.id] = toInt(stockIn.value); save(); update(); });
+      stockIn.addEventListener('blur', function () { stockIn.value = S.stock[i.id] || ''; });
+      priceIn.addEventListener('input', function () {
+        var v = priceIn.value;
+        S.price[i.id] = (v === '' || !isFinite(Number(v)) || Number(v) < 0) ? null : Number(v);
+        save(); update();
+      });
+    });
+  });
+
+  function sync() {
+    DISHES.forEach(function (d) { refs.dish[d.id].input.value = S.qty[d.id]; });
+    ING.forEach(function (i) {
+      var r = refs.row[i.id];
+      r.stockIn.value = S.stock[i.id] || '';
+      r.priceIn.value = S.price[i.id] == null ? '' : S.price[i.id];
+    });
+  }
+
+  /* Расчёт */
+  var lastOrderText = '';
+  function update() {
+    var need = {}; ING.forEach(function (i) { need[i.id] = 0; });
+    var portions = 0;
+    DISHES.forEach(function (d) {
+      var q = S.qty[d.id] || 0; portions += q;
+      d.items.forEach(function (it) { need[it[0]] += q * it[1]; });
+    });
+
+    var total = 0, order = 0, unkNeed = 0, unkOrder = 0, rows = [];
+    ING.forEach(function (i) {
+      var n = need[i.id], st = S.stock[i.id] || 0, sh = Math.max(0, n - st), p = S.price[i.id], r = refs.row[i.id];
+      r.need.textContent = n || '—';
+      r.short.textContent = sh || '—';
+      r.short.classList.toggle('is-short', sh > 0);
+      r.tr.classList.toggle('idle', n === 0);
+      r.priceIn.classList.toggle('missing', p == null);
+      if (n > 0) {
+        if (p == null) { unkNeed++; r.sum.textContent = '?'; }
+        else { total += n * p; r.sum.textContent = fmt(n * p); }
+      } else r.sum.textContent = '—';
+      if (sh > 0) {
+        if (p == null) unkOrder++; else order += sh * p;
+        rows.push({ i: i, sh: sh, p: p });
+      }
+    });
+
+    $('tPortions').textContent = portions + ' ' + pl(portions, ['порция', 'порции', 'порций']);
+    $('tTotal').textContent = fmt(total);
+    $('tTotalNote').textContent = unkNeed ? 'без цены: ' + unkNeed + ' ' + pl(unkNeed, ['позиция', 'позиции', 'позиций']) : '';
+    $('tOrder').textContent = fmt(order);
+    $('tOrderNote').textContent = unkOrder ? 'без цены: ' + unkOrder + ' ' + pl(unkOrder, ['позиция', 'позиции', 'позиций']) : '';
+    $('orderGrand').textContent = fmt(order) + (unkOrder ? ' +?' : '');
+
+    /* Карточки блюд */
+    DISHES.forEach(function (d) {
+      var unit = 0, unk = 0, can = Infinity;
+      d.items.forEach(function (it) {
+        var p = S.price[it[0]];
+        if (p == null) unk++; else unit += p * it[1];
+        can = Math.min(can, Math.floor((S.stock[it[0]] || 0) / it[1]));
+      });
+      var q = S.qty[d.id] || 0, ref = refs.dish[d.id];
+      ref.cost.textContent = '';
+      var l1 = el('div', null, document.createTextNode('Порция '), el('strong', { text: fmt(unit) }));
+      if (unk) l1.appendChild(el('span', { 'class': 'q', text: ' +?' }));
+      var l2 = el('div', null, document.createTextNode('Все ' + q + ': '), el('strong', { text: fmt(unit * q) }));
+      if (unk && q) l2.appendChild(el('span', { 'class': 'q', text: ' +?' }));
+      ref.cost.appendChild(l1); ref.cost.appendChild(l2);
+      ref.can.textContent = '';
+      ref.can.appendChild(document.createTextNode('Со склада сейчас выйдет: '));
+      ref.can.appendChild(el('b', { text: can + ' ' + pl(can, ['порция', 'порции', 'порций']) }));
+    });
+
+    /* Список заказа */
+    var list = $('orderList');
+    list.textContent = '';
+    var lines = [];
+    if (!rows.length) {
+      list.appendChild(el('li', { 'class': 'order-empty', text: portions ? 'Склада хватает на всё запланированное, заказывать нечего.' : 'Укажите порции в первом шаге, и здесь появится список заказа.' }));
+    } else {
+      rows.forEach(function (r) {
+        var li = el('li', null,
+          el('span', { 'class': 'nm', text: r.i.name }),
+          el('span', { 'class': 'qty', text: r.sh + ' шт.' }),
+          el('span', { 'class': 'calc', text: r.p == null ? 'цена не указана' : '× ' + fmt(r.p) }),
+          el('span', { 'class': 'sum' + (r.p == null ? ' q' : ''), text: r.p == null ? '?' : fmt(r.sh * r.p) }));
+        list.appendChild(li);
+        lines.push(r.i.name + ' — ' + r.sh + ' шт.' + (r.p == null ? '' : ' (' + fmt(r.sh * r.p) + ')'));
+      });
+      lines.push('Итого: ' + fmt(order) + (unkOrder ? ' + позиции без цены' : ''));
+    }
+    lastOrderText = lines.join('\n');
+  }
+
+  /* Копирование */
+  var timers = {};
+  function flash(id, msg) {
+    var e = $(id); e.textContent = msg;
+    clearTimeout(timers[id]); timers[id] = setTimeout(function () { e.textContent = ''; }, 3500);
+  }
+  function copy(text, ta, statusId) {
+    var done = function () { flash(statusId, 'Скопировано'); };
+    var fallback = function () {
+      ta.hidden = false; ta.value = text; ta.focus(); ta.select();
+      flash(statusId, 'Текст выделен, нажмите Ctrl+C');
+    };
+    try {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } catch (e) { fallback(); }
+  }
+  $('copyOrder').addEventListener('click', function () {
+    if (!lastOrderText) { flash('orderStatus', 'Пока нечего копировать'); return; }
+    copy(lastOrderText, $('orderText'), 'orderStatus');
+  });
+  $('exportBtn').addEventListener('click', function () {
+    var ta = $('backup'); ta.value = JSON.stringify(S);
+    copy(ta.value, ta, 'backupStatus');
+  });
+  $('importBtn').addEventListener('click', function () {
+    try {
+      var o = JSON.parse($('backup').value);
+      if (!o || typeof o !== 'object' || (!o.qty && !o.stock && !o.price)) throw new Error('bad');
+      merge(o); save(); sync(); update();
+      flash('backupStatus', 'Данные загружены');
+    } catch (e) { flash('backupStatus', 'Не получилось прочитать копию. Вставьте текст целиком, как он был скопирован.'); }
+  });
+
+  /* Сброс с подтверждением */
+  function twoStep(id, action) {
+    var btn = $(id), orig = btn.textContent, t;
+    btn.addEventListener('click', function () {
+      if (btn.hasAttribute('data-armed')) {
+        clearTimeout(t); btn.removeAttribute('data-armed'); btn.textContent = orig; action();
+      } else {
+        btn.setAttribute('data-armed', '1'); btn.textContent = 'Точно? Нажмите ещё раз';
+        t = setTimeout(function () { btn.removeAttribute('data-armed'); btn.textContent = orig; }, 3500);
+      }
+    });
+  }
+  twoStep('resetQty', function () { DISHES.forEach(function (d) { S.qty[d.id] = 0; }); save(); sync(); update(); });
+  twoStep('resetStock', function () { ING.forEach(function (i) { S.stock[i.id] = 0; }); save(); sync(); update(); });
+
+  sync();
+  update();
+})();
+</script>
+</body>
+</html>
