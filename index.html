@@ -230,6 +230,7 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
   </details>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
   var ING = [
@@ -267,6 +268,12 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
   ];
 
   var KEY = 'saloon-kitchen-v1';
+  var SUPABASE_URL = 'https://mqvisylfzszdedbjngnd.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_2QkYZfcSdbXlj6OJ5U5nuw_rCg2Gj16';
+  var REMOTE_ID = 'hate-rp-saloon';
+  var cloud = null, cloudChannel = null, applyingCloud = false, saveTimer = null, cloudReady = false, lastRemoteJson = '';
+  var cloudStatus = null;
+  function setCloudStatus(message) { if (cloudStatus) cloudStatus.textContent = message; }
   function fresh() {
     var s = { qty: {}, stock: {}, price: {} };
     DISHES.forEach(function (d) { s.qty[d.id] = d.def; });
@@ -289,7 +296,45 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     return true;
   }
   try { var raw = localStorage.getItem(KEY); if (raw) merge(JSON.parse(raw)); } catch (e) {}
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    if (!cloud || !cloudReady || applyingCloud) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async function () {
+      var snapshot = JSON.stringify(S);
+      try {
+        var result = await cloud.from('saloon_state').upsert({ id: REMOTE_ID, state: JSON.parse(snapshot), updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        if (result.error) throw result.error;
+        lastRemoteJson = snapshot; setCloudStatus('☁ Синхронизировано с общей базой.');
+      } catch (e) { setCloudStatus('Ошибка сохранения в облако: ' + (e.message || e)); }
+    }, 300);
+  }
+  async function startCloudSync() {
+    if (!window.supabase || !window.supabase.createClient) { setCloudStatus('Не загрузилась библиотека Supabase. Проверь подключение к интернету.'); return; }
+    cloud = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    try {
+      var result = await cloud.from('saloon_state').select('state').eq('id', REMOTE_ID).maybeSingle();
+      if (result.error) throw result.error;
+      if (result.data && result.data.state && Object.keys(result.data.state).length) {
+        applyingCloud = true; merge(result.data.state); applyingCloud = false;
+        lastRemoteJson = JSON.stringify(S);
+        try { localStorage.setItem(KEY, lastRemoteJson); } catch (e) {}
+        sync(); update();
+      } else {
+        var initial = await cloud.from('saloon_state').upsert({ id: REMOTE_ID, state: S, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        if (initial.error) throw initial.error;
+        lastRemoteJson = JSON.stringify(S);
+      }
+      cloudReady = true;
+      cloudChannel = cloud.channel('saloon-state-live').on('postgres_changes', { event: '*', schema: 'public', table: 'saloon_state', filter: 'id=eq.' + REMOTE_ID }, function (payload) {
+        if (!payload.new || !payload.new.state) return;
+        var incoming = JSON.stringify(payload.new.state); if (incoming === lastRemoteJson) return;
+        applyingCloud = true; merge(payload.new.state); applyingCloud = false; lastRemoteJson = JSON.stringify(S);
+        try { localStorage.setItem(KEY, lastRemoteJson); } catch (e) {}
+        sync(); update(); setCloudStatus('☁ Получено обновление от сотрудника.');
+      }).subscribe(function (status) { if (status === 'SUBSCRIBED') setCloudStatus('☁ Общая синхронизация включена. Все подключённые сотрудники видят общие данные.'); else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setCloudStatus('Ошибка канала синхронизации: ' + status); });
+    } catch (e) { cloudReady = false; setCloudStatus('Не удалось подключиться к Supabase: ' + (e.message || e) + '. Проверь SQL и Realtime.'); }
+  }
 
   function fmt(n) { return '$' + n.toFixed(2); }
   function pl(n, f) {
@@ -502,6 +547,14 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
 
   sync();
   update();
+  /* Cloud status */
+  cloudStatus = document.createElement('div');
+  cloudStatus.id = 'cloudStatus';
+  cloudStatus.setAttribute('role', 'status');
+  cloudStatus.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:9999;max-width:min(420px,calc(100vw - 28px));padding:10px 14px;border:1px solid #7775;border-radius:10px;background:var(--panel, #202020);color:var(--text, #f4f0e8);font:13px/1.4 system-ui,sans-serif;box-shadow:0 4px 18px #0002';
+  cloudStatus.textContent = 'Подключаем общую базу…';
+  document.body.appendChild(cloudStatus);
+  startCloudSync();
 })();
 </script>
 </body>
