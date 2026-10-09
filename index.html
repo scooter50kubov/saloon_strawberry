@@ -158,6 +158,15 @@ textarea { width: 100%; min-height: 110px; margin-top: 10px; padding: 8px 10px; 
 details.data { border-top: 1px solid var(--line); padding-top: 14px; }
 details.data summary { cursor: pointer; font-weight: 500; }
 details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
+.manage-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
+.manage-card { border:1px solid var(--line); background:var(--surface); border-radius:6px; padding:16px; min-width:0; }
+.manage-card h3 { margin:0 0 8px; font-size:1.05rem; }
+.manage-card p { color:var(--muted); font-size:13px; margin:0 0 12px; }
+.manage-card label { display:block; font-size:13px; margin:10px 0 5px; }
+.manage-card input, .manage-card select, .manage-card textarea { width:100%; margin:0; padding:8px 10px; border:1px solid var(--line); border-radius:4px; background:var(--bg); }
+.manage-card textarea { min-height:120px; font-family:var(--f-body); font-size:14px; }
+.manage-card .btn { margin-top:12px; }
+.manage-status { min-height:1.4em; color:var(--accent); font-size:13px; margin-top:8px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .btn, .stepper button { transition: background-color .12s, filter .12s; }
@@ -187,6 +196,26 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     <div id="dishes"></div>
     <p class="hint">Стартовые числа это пример. Впишите свои или обнулите всё одним нажатием.</p>
     <div class="row-actions"><button class="btn quiet" id="resetQty" type="button">Обнулить порции</button></div>
+  </section>
+
+  <section id="manage">
+    <div class="sec-head"><span class="no">+</span><h2>Свои ингредиенты и рецепты</h2><p>Добавляй продукты в склад, а затем собирай собственные рецепты из любых ингредиентов. Новые записи сохраняются вместе с данными сайта.</p></div>
+    <div class="manage-grid">
+      <form class="manage-card" id="ingredientForm">
+        <h3>Добавить ингредиент</h3><p>После добавления он появится в таблице склада и будет доступен в рецептах.</p>
+        <label for="newIngName">Название ингредиента</label><input id="newIngName" required maxlength="70" placeholder="Например, сливки">
+        <label for="newIngGroup">Категория</label><input id="newIngGroup" maxlength="50" value="Прочее" placeholder="Например, Мясо">
+        <label for="newIngPrice">Цена за штуку, $ (необязательно)</label><input id="newIngPrice" type="number" min="0" step="0.01" placeholder="Оставь пустым, если неизвестна">
+        <button class="btn primary" type="submit">Добавить ингредиент</button><div class="manage-status" id="ingredientStatus" role="status"></div>
+      </form>
+      <form class="manage-card" id="recipeForm">
+        <h3>Добавить рецепт</h3><p>Укажи блюдо и ингредиенты: каждый ингредиент с новой строки в формате <b>название — количество</b>. Названия должны совпадать с ингредиентами на складе.</p>
+        <label for="newRecipeName">Название блюда</label><input id="newRecipeName" required maxlength="80" placeholder="Например, Пирог с мясом">
+        <label for="newRecipeCat">Категория</label><input id="newRecipeCat" maxlength="50" value="Еда" placeholder="Например, Напитки">
+        <label for="newRecipeItems">Состав на одну порцию</label><textarea id="newRecipeItems" required placeholder="Картофель — 2&#10;Оленина — 1&#10;Соль — 1"></textarea>
+        <button class="btn primary" type="submit">Добавить рецепт</button><div class="manage-status" id="recipeStatus" role="status"></div>
+      </form>
+    </div>
   </section>
 
   <section id="s2">
@@ -230,6 +259,7 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
   </details>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
   var ING = [
@@ -253,6 +283,14 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     { id: 'coffee', name: 'Молотый кофе', group: 'Прочее', price: null },
     { id: 'honey', name: 'Мёд', group: 'Прочее', price: null }
   ];
+  var customIngredients = [], customDishes = [];
+  try {
+    var customRaw = JSON.parse(localStorage.getItem('saloonKitchenCustomV1') || '{}');
+    customIngredients = Array.isArray(customRaw.ingredients) ? customRaw.ingredients : [];
+    customDishes = Array.isArray(customRaw.dishes) ? customRaw.dishes : [];
+  } catch (e) {}
+  customIngredients.forEach(function (i) { if (i && i.id && !ING.some(function (x) { return x.id === i.id; })) ING.push(i); });
+  customDishes.forEach(function (d) { if (d && d.id && !DISHES.some(function (x) { return x.id === d.id; })) DISHES.push(d); });
   var BY = {}; ING.forEach(function (i) { BY[i.id] = i; });
 
   var DISHES = [
@@ -267,8 +305,14 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
   ];
 
   var KEY = 'saloon-kitchen-v1';
+  var SUPABASE_URL = 'https://mqvisylfzszdedbjngnd.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_2QkYZfcSdbXlj6OJ5U5nuw_rCg2Gj16';
+  var REMOTE_ID = 'hate-rp-saloon';
+  var cloud = null, cloudChannel = null, applyingCloud = false, saveTimer = null, cloudReady = false, lastRemoteJson = '';
+  var cloudStatus = null;
+  function setCloudStatus(message) { if (cloudStatus) cloudStatus.textContent = message; }
   function fresh() {
-    var s = { qty: {}, stock: {}, price: {} };
+    var s = { qty: {}, stock: {}, price: {}, customIngredients: customIngredients, customDishes: customDishes };
     DISHES.forEach(function (d) { s.qty[d.id] = d.def; });
     ING.forEach(function (i) { s.stock[i.id] = 0; s.price[i.id] = i.price; });
     return s;
@@ -278,6 +322,14 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
   function toInt(v) { var n = Math.floor(Number(v)); return isFinite(n) && n > 0 ? n : 0; }
   function merge(o) {
     if (!o || typeof o !== 'object') return false;
+    var addedDefinitions = false;
+    (Array.isArray(o.customIngredients) ? o.customIngredients : []).forEach(function (i) {
+      if (i && i.id && !ING.some(function (x) { return x.id === i.id; })) { ING.push(i); customIngredients.push(i); BY[i.id] = i; S.stock[i.id] = 0; S.price[i.id] = i.price == null ? null : Number(i.price); addedDefinitions = true; }
+    });
+    (Array.isArray(o.customDishes) ? o.customDishes : []).forEach(function (d) {
+      if (d && d.id && !DISHES.some(function (x) { return x.id === d.id; })) { DISHES.push(d); customDishes.push(d); S.qty[d.id] = toInt(d.def || 0); addedDefinitions = true; }
+    });
+    if (addedDefinitions && $('dishes')) { try { localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); } catch (e) {} }
     DISHES.forEach(function (d) { if (o.qty && d.id in o.qty) S.qty[d.id] = toInt(o.qty[d.id]); });
     ING.forEach(function (i) {
       if (o.stock && i.id in o.stock) S.stock[i.id] = toInt(o.stock[i.id]);
@@ -289,7 +341,50 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     return true;
   }
   try { var raw = localStorage.getItem(KEY); if (raw) merge(JSON.parse(raw)); } catch (e) {}
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  function save() {
+    S.customIngredients = customIngredients; S.customDishes = customDishes;
+    try { localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); } catch (e) {}
+    if (!cloud || !cloudReady || applyingCloud) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async function () {
+      var snapshot = JSON.stringify(S);
+      try {
+        var result = await cloud.from('saloon_state').upsert({ id: REMOTE_ID, state: JSON.parse(snapshot), updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        if (result.error) throw result.error;
+        lastRemoteJson = snapshot; setCloudStatus('☁ Синхронизировано с общей базой.');
+      } catch (e) { setCloudStatus('Ошибка сохранения в облако: ' + (e.message || e)); }
+    }, 300);
+  }
+  async function startCloudSync() {
+    if (!window.supabase || !window.supabase.createClient) { setCloudStatus('Не загрузилась библиотека Supabase. Проверь подключение к интернету.'); return; }
+    cloud = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    try {
+      var result = await cloud.from('saloon_state').select('state').eq('id', REMOTE_ID).maybeSingle();
+      if (result.error) throw result.error;
+      if (result.data && result.data.state && Object.keys(result.data.state).length) {
+        var beforeDefs = ING.length + DISHES.length;
+        applyingCloud = true; merge(result.data.state); applyingCloud = false;
+        lastRemoteJson = JSON.stringify(S);
+        try { localStorage.setItem(KEY, lastRemoteJson); } catch (e) {}
+        if (ING.length + DISHES.length !== beforeDefs) { location.reload(); return; }
+        sync(); update();
+      } else {
+        var initial = await cloud.from('saloon_state').upsert({ id: REMOTE_ID, state: S, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        if (initial.error) throw initial.error;
+        lastRemoteJson = JSON.stringify(S);
+      }
+      cloudReady = true;
+      cloudChannel = cloud.channel('saloon-state-live').on('postgres_changes', { event: '*', schema: 'public', table: 'saloon_state', filter: 'id=eq.' + REMOTE_ID }, function (payload) {
+        if (!payload.new || !payload.new.state) return;
+        var incoming = JSON.stringify(payload.new.state); if (incoming === lastRemoteJson) return;
+        var beforeDefs = ING.length + DISHES.length;
+        applyingCloud = true; merge(payload.new.state); applyingCloud = false; lastRemoteJson = JSON.stringify(S);
+        try { localStorage.setItem(KEY, lastRemoteJson); localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); } catch (e) {}
+        if (ING.length + DISHES.length !== beforeDefs) { location.reload(); return; }
+        sync(); update(); setCloudStatus('☁ Получено обновление от сотрудника.');
+      }).subscribe(function (status) { if (status === 'SUBSCRIBED') setCloudStatus('☁ Общая синхронизация включена. Все подключённые сотрудники видят общие данные.'); else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setCloudStatus('Ошибка канала синхронизации: ' + status); });
+    } catch (e) { cloudReady = false; setCloudStatus('Не удалось подключиться к Supabase: ' + (e.message || e) + '. Проверь SQL и Realtime.'); }
+  }
 
   function fmt(n) { return '$' + n.toFixed(2); }
   function pl(n, f) {
@@ -308,6 +403,55 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     return e;
   }
   function $(id) { return document.getElementById(id); }
+  function makeId(prefix, name) {
+    var base = String(name).toLowerCase().replace(/[^a-zа-яё0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 35) || 'item';
+    var id = prefix + '-' + base, n = 2;
+    while (ING.some(function (i) { return i.id === id; }) || DISHES.some(function (d) { return d.id === id; })) id = prefix + '-' + base + '-' + n++;
+    return id;
+  }
+  function persistDefinitionsAndReload() {
+    S.customIngredients = customIngredients; S.customDishes = customDishes;
+    try { localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    if (cloud && cloudReady && !applyingCloud) {
+      cloud.from('saloon_state').upsert({ id: REMOTE_ID, state: S, updated_at: new Date().toISOString() }, { onConflict: 'id' }).then(function (r) {
+        if (r.error) setCloudStatus('Не удалось сохранить новые записи в облако: ' + r.error.message);
+        setTimeout(function () { location.reload(); }, 250);
+      }).catch(function () { setTimeout(function () { location.reload(); }, 250); });
+    } else { location.reload(); }
+  }
+  $('ingredientForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('newIngName').value.trim(), group = $('newIngGroup').value.trim() || 'Прочее', rawPrice = $('newIngPrice').value.trim();
+    if (!name) return;
+    if (ING.some(function (i) { return i.name.toLowerCase() === name.toLowerCase(); })) { $('ingredientStatus').textContent = 'Такой ингредиент уже есть в списке.'; return; }
+    var price = rawPrice === '' ? null : Number(rawPrice);
+    if (price !== null && (!isFinite(price) || price < 0)) { $('ingredientStatus').textContent = 'Укажи цену от 0 или оставь поле пустым.'; return; }
+    var item = { id: makeId('custom-ing', name), name: name, group: group, price: price };
+    customIngredients.push(item); ING.push(item); BY[item.id] = item; S.stock[item.id] = 0; S.price[item.id] = price;
+    $('ingredientStatus').textContent = 'Ингредиент добавлен.'; persistDefinitionsAndReload();
+  });
+  $('recipeForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('newRecipeName').value.trim(), cat = $('newRecipeCat').value.trim() || 'Еда';
+    var rawLines = $('newRecipeItems').value.split(/\n+/).map(function (line) { return line.trim(); }).filter(Boolean), items = [], errors = [];
+    rawLines.forEach(function (line) {
+      var m = line.match(/^(.+?)\s*(?:—|–|-|:)\s*(\d+(?:[.,]\d+)?)\s*$/);
+      if (!m) { errors.push('Не удалось разобрать строку: ' + line); return; }
+      var ingName = m[1].trim(), amount = Number(m[2].replace(',', '.'));
+      var found = ING.find(function (i) { return i.name.toLowerCase() === ingName.toLowerCase(); });
+      if (!found) { errors.push('Нет ингредиента «' + ingName + '» — сначала добавь его в форме слева.'); return; }
+      if (!(amount > 0) || !isFinite(amount)) { errors.push('Количество должно быть больше нуля: ' + line); return; }
+      var existing = items.find(function (it) { return it[0] === found.id; });
+      if (existing) existing[1] += amount; else items.push([found.id, amount]);
+    });
+    if (!name) errors.push('Впиши название блюда.');
+    if (!items.length && !errors.length) errors.push('Добавь хотя бы один ингредиент.');
+    if (errors.length) { $('recipeStatus').textContent = errors.join(' '); return; }
+    if (DISHES.some(function (d) { return d.name.toLowerCase() === name.toLowerCase(); })) { $('recipeStatus').textContent = 'Блюдо с таким названием уже есть.'; return; }
+    var dish = { id: makeId('custom-dish', name), cat: cat, name: name, def: 0, items: items };
+    customDishes.push(dish); DISHES.push(dish); S.qty[dish.id] = 0;
+    $('recipeStatus').textContent = 'Рецепт добавлен.'; persistDefinitionsAndReload();
+  });
 
   var refs = { dish: {}, row: {} };
 
@@ -502,6 +646,14 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
 
   sync();
   update();
+  /* Cloud status */
+  cloudStatus = document.createElement('div');
+  cloudStatus.id = 'cloudStatus';
+  cloudStatus.setAttribute('role', 'status');
+  cloudStatus.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:9999;max-width:min(420px,calc(100vw - 28px));padding:10px 14px;border:1px solid #7775;border-radius:10px;background:var(--panel, #202020);color:var(--text, #f4f0e8);font:13px/1.4 system-ui,sans-serif;box-shadow:0 4px 18px #0002';
+  cloudStatus.textContent = 'Подключаем общую базу…';
+  document.body.appendChild(cloudStatus);
+  startCloudSync();
 })();
 </script>
 </body>
