@@ -158,19 +158,27 @@ textarea { width: 100%; min-height: 110px; margin-top: 10px; padding: 8px 10px; 
 details.data { border-top: 1px solid var(--line); padding-top: 14px; }
 details.data summary { cursor: pointer; font-weight: 500; }
 details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
-.manage-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
-.manage-card { border:1px solid var(--line); background:var(--surface); border-radius:6px; padding:16px; min-width:0; }
-.manage-card h3 { margin:0 0 8px; font-size:1.05rem; }
-.manage-card p { color:var(--muted); font-size:13px; margin:0 0 12px; }
-.manage-card label { display:block; font-size:13px; margin:10px 0 5px; }
-.manage-card input, .manage-card select, .manage-card textarea { width:100%; margin:0; padding:8px 10px; border:1px solid var(--line); border-radius:4px; background:var(--bg); }
-.manage-card textarea { min-height:120px; font-family:var(--f-body); font-size:14px; }
-.manage-card .btn { margin-top:12px; }
-.manage-status { min-height:1.4em; color:var(--accent); font-size:13px; margin-top:8px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .btn, .stepper button { transition: background-color .12s, filter .12s; }
 }
+
+/* Формы добавления */
+.adder { margin-top: 16px; border: 1px dashed var(--line); border-radius: 6px; background: var(--surface); padding: 0 14px; }
+.adder summary { cursor: pointer; font-weight: 500; padding: 12px 0; }
+.adder[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.form { padding-bottom: 14px; display: flex; flex-direction: column; gap: 12px; }
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.field { width: 100%; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); font-size: 15px; }
+.form-sub { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.item-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px auto; gap: 8px; margin-bottom: 8px; }
+.item-row .btn { padding-inline: 12px; }
+.mini-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.mini { border: 1px solid var(--line); background: transparent; border-radius: 3px; padding: 0 8px; font-size: 12px; line-height: 1.7; color: var(--muted); cursor: pointer; font-family: var(--f-body); }
+.mini:hover { background: var(--tint); color: var(--ink); }
+.mini[data-armed] { border-color: var(--short); color: var(--short); }
+td:first-child .mini-actions { font-family: var(--f-body); }
 </style>
 </head>
 <body>
@@ -196,26 +204,25 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     <div id="dishes"></div>
     <p class="hint">Стартовые числа это пример. Впишите свои или обнулите всё одним нажатием.</p>
     <div class="row-actions"><button class="btn quiet" id="resetQty" type="button">Обнулить порции</button></div>
-  </section>
 
-  <section id="manage">
-    <div class="sec-head"><span class="no">+</span><h2>Свои ингредиенты и рецепты</h2><p>Добавляй продукты в склад, а затем собирай собственные рецепты из любых ингредиентов. Новые записи сохраняются вместе с данными сайта.</p></div>
-    <div class="manage-grid">
-      <form class="manage-card" id="ingredientForm">
-        <h3>Добавить ингредиент</h3><p>После добавления он появится в таблице склада и будет доступен в рецептах.</p>
-        <label for="newIngName">Название ингредиента</label><input id="newIngName" required maxlength="70" placeholder="Например, сливки">
-        <label for="newIngGroup">Категория</label><input id="newIngGroup" maxlength="50" value="Прочее" placeholder="Например, Мясо">
-        <label for="newIngPrice">Цена за штуку, $ (необязательно)</label><input id="newIngPrice" type="number" min="0" step="0.01" placeholder="Оставь пустым, если неизвестна">
-        <button class="btn primary" type="submit">Добавить ингредиент</button><div class="manage-status" id="ingredientStatus" role="status"></div>
-      </form>
-      <form class="manage-card" id="recipeForm">
-        <h3>Добавить рецепт</h3><p>Укажи блюдо и ингредиенты: каждый ингредиент с новой строки в формате <b>название — количество</b>. Названия должны совпадать с ингредиентами на складе.</p>
-        <label for="newRecipeName">Название блюда</label><input id="newRecipeName" required maxlength="80" placeholder="Например, Пирог с мясом">
-        <label for="newRecipeCat">Категория</label><input id="newRecipeCat" maxlength="50" value="Еда" placeholder="Например, Напитки">
-        <label for="newRecipeItems">Состав на одну порцию</label><textarea id="newRecipeItems" required placeholder="Картофель — 2&#10;Оленина — 1&#10;Соль — 1"></textarea>
-        <button class="btn primary" type="submit">Добавить рецепт</button><div class="manage-status" id="recipeStatus" role="status"></div>
-      </form>
-    </div>
+    <details class="adder" id="dishForm">
+      <summary>+ Добавить своё блюдо</summary>
+      <div class="form">
+        <div class="form-row">
+          <label>Название<input class="field" id="dfName" type="text" maxlength="80" placeholder="Например, Яичница"></label>
+          <label>Категория<input class="field" id="dfCat" type="text" list="catList" maxlength="60" placeholder="Еда, Горячие напитки или новая"></label>
+        </div>
+        <div class="form-sub">Состав на 1 порцию</div>
+        <div id="dfItems"></div>
+        <div><button class="btn quiet" id="dfAddItem" type="button">+ ингредиент</button></div>
+        <div class="row-actions" style="margin-top:0">
+          <button class="btn primary" id="dfSave" type="button">Добавить блюдо</button>
+          <button class="btn quiet" id="dfCancel" type="button" hidden>Отменить изменение</button>
+        </div>
+        <div class="status" id="dfStatus" role="status"></div>
+      </div>
+    </details>
+    <datalist id="catList"></datalist>
   </section>
 
   <section id="s2">
@@ -229,6 +236,27 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     </table></div>
     <p class="note">Цены растений взяты из вашего списка по секторам. Тимьян из списка записан как ползучий тимьян, морковь как дикая морковь, чеснок как дикий чеснок. Для воды, соли, муки, молотого кофе, мёда и мяса цен в списке не было, впишите их сами.</p>
     <div class="row-actions"><button class="btn quiet" id="resetStock" type="button">Обнулить склад</button></div>
+    <div class="status" id="ingStatus" role="status"></div>
+
+    <details class="adder" id="ingForm">
+      <summary>+ Добавить свой ингредиент</summary>
+      <div class="form">
+        <div class="form-row">
+          <label>Название<input class="field" id="ifName" type="text" maxlength="80" placeholder="Например, Яйца"></label>
+          <label>Группа<input class="field" id="ifGroup" type="text" list="groupList" maxlength="60" placeholder="Растения и травы, Мясо, Прочее или новая"></label>
+        </div>
+        <div class="form-row">
+          <label>Цена за штуку, $ (можно оставить пустой)<input class="field" id="ifPrice" type="number" min="0" step="0.01" inputmode="decimal"></label>
+          <label>Сейчас на складе (можно оставить пустым)<input class="field" id="ifStock" type="number" min="0" step="1" inputmode="numeric"></label>
+        </div>
+        <div class="row-actions" style="margin-top:0">
+          <button class="btn primary" id="ifSave" type="button">Добавить ингредиент</button>
+          <button class="btn quiet" id="ifCancel" type="button" hidden>Отменить изменение</button>
+        </div>
+        <div class="status" id="ifStatus" role="status"></div>
+      </div>
+    </details>
+    <datalist id="groupList"></datalist>
   </section>
 
   <section id="s3">
@@ -262,7 +290,7 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
-  var ING = [
+  var BASE_ING = [
     { id: 'carrot', name: 'Дикая морковь', group: 'Растения и травы', sector: 1, price: 0.26 },
     { id: 'garlic', name: 'Дикий чеснок', group: 'Растения и травы', sector: 1, price: 0.26 },
     { id: 'oregano', name: 'Душица', group: 'Растения и травы', sector: 2, price: 0.25 },
@@ -283,17 +311,8 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     { id: 'coffee', name: 'Молотый кофе', group: 'Прочее', price: null },
     { id: 'honey', name: 'Мёд', group: 'Прочее', price: null }
   ];
-  var customIngredients = [], customDishes = [];
-  try {
-    var customRaw = JSON.parse(localStorage.getItem('saloonKitchenCustomV1') || '{}');
-    customIngredients = Array.isArray(customRaw.ingredients) ? customRaw.ingredients : [];
-    customDishes = Array.isArray(customRaw.dishes) ? customRaw.dishes : [];
-  } catch (e) {}
-  customIngredients.forEach(function (i) { if (i && i.id && !ING.some(function (x) { return x.id === i.id; })) ING.push(i); });
-  customDishes.forEach(function (d) { if (d && d.id && !DISHES.some(function (x) { return x.id === d.id; })) DISHES.push(d); });
-  var BY = {}; ING.forEach(function (i) { BY[i.id] = i; });
 
-  var DISHES = [
+  var BASE_DISHES = [
     { id: 'cherokee', cat: 'Еда', name: 'Суп чероки', def: 5, items: [['water',1],['carrot',1],['oregano',1],['potato',2],['corn',1],['venison',1],['thyme',1],['salt',1]] },
     { id: 'potmeat', cat: 'Еда', name: 'Картошка с мясом', def: 5, items: [['carrot',2],['garlic',1],['potato',2],['game',1]] },
     { id: 'tabaka', cat: 'Еда', name: 'Цыпленок табака', def: 5, items: [['water',1],['carrot',1],['oregano',2],['poultry',1]] },
@@ -304,6 +323,10 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     { id: 'thymetea', cat: 'Горячие напитки', name: 'Чай из тимьяна', def: 5, items: [['water',1],['honey',2],['thyme',2]] }
   ];
 
+  var BASE_ING_IDS = {}; BASE_ING.forEach(function (i) { BASE_ING_IDS[i.id] = 1; });
+  var BASE_DISH_IDS = {}; BASE_DISHES.forEach(function (d) { BASE_DISH_IDS[d.id] = 1; });
+  var ING = [], DISHES = [], BY = {};
+
   var KEY = 'saloon-kitchen-v1';
   var SUPABASE_URL = 'https://mqvisylfzszdedbjngnd.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_2QkYZfcSdbXlj6OJ5U5nuw_rCg2Gj16';
@@ -311,25 +334,57 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
   var cloud = null, cloudChannel = null, applyingCloud = false, saveTimer = null, cloudReady = false, lastRemoteJson = '';
   var cloudStatus = null;
   function setCloudStatus(message) { if (cloudStatus) cloudStatus.textContent = message; }
-  function fresh() {
-    var s = { qty: {}, stock: {}, price: {}, customIngredients: customIngredients, customDishes: customDishes };
-    DISHES.forEach(function (d) { s.qty[d.id] = d.def; });
-    ING.forEach(function (i) { s.stock[i.id] = 0; s.price[i.id] = i.price; });
-    return s;
+  var S = { qty: {}, stock: {}, price: {}, customIng: [], customDishes: [] };
+
+  function rebuildLists() {
+    ING = BASE_ING.concat(S.customIng || []);
+    BY = {}; ING.forEach(function (i) { BY[i.id] = i; });
+    DISHES = BASE_DISHES.concat(S.customDishes || []);
   }
-  var S = fresh();
+  function ensureDefaults() {
+    DISHES.forEach(function (d) { if (!(d.id in S.qty)) S.qty[d.id] = d.def || 0; });
+    ING.forEach(function (i) {
+      if (!(i.id in S.stock)) S.stock[i.id] = 0;
+      if (!(i.id in S.price)) S.price[i.id] = i.price == null ? null : i.price;
+    });
+  }
+  rebuildLists(); ensureDefaults();
 
   function toInt(v) { var n = Math.floor(Number(v)); return isFinite(n) && n > 0 ? n : 0; }
+  function cleanIng(a) {
+    var seen = {}, out = [];
+    a.forEach(function (x) {
+      if (!x || typeof x !== 'object') return;
+      var id = String(x.id || ''), name = String(x.name || '').trim();
+      if (!id || !name || seen[id] || BASE_ING_IDS[id]) return;
+      seen[id] = 1;
+      out.push({ id: id, name: name.slice(0, 80), group: String(x.group || '').trim().slice(0, 60) || 'Прочее', custom: true });
+    });
+    return out;
+  }
+  function cleanDishes(a) {
+    var seen = {}, out = [];
+    a.forEach(function (x) {
+      if (!x || typeof x !== 'object' || !Array.isArray(x.items)) return;
+      var id = String(x.id || ''), name = String(x.name || '').trim();
+      if (!id || !name || seen[id] || BASE_DISH_IDS[id]) return;
+      var items = [];
+      x.items.forEach(function (it) {
+        if (!Array.isArray(it) || !BY[it[0]]) return;
+        var q = toInt(it[1]); if (q > 0) items.push([it[0], q]);
+      });
+      if (!items.length) return;
+      seen[id] = 1;
+      out.push({ id: id, cat: String(x.cat || '').trim().slice(0, 60) || 'Другое', name: name.slice(0, 80), items: items, custom: true });
+    });
+    return out;
+  }
   function merge(o) {
     if (!o || typeof o !== 'object') return false;
-    var addedDefinitions = false;
-    (Array.isArray(o.customIngredients) ? o.customIngredients : []).forEach(function (i) {
-      if (i && i.id && !ING.some(function (x) { return x.id === i.id; })) { ING.push(i); customIngredients.push(i); BY[i.id] = i; S.stock[i.id] = 0; S.price[i.id] = i.price == null ? null : Number(i.price); addedDefinitions = true; }
-    });
-    (Array.isArray(o.customDishes) ? o.customDishes : []).forEach(function (d) {
-      if (d && d.id && !DISHES.some(function (x) { return x.id === d.id; })) { DISHES.push(d); customDishes.push(d); S.qty[d.id] = toInt(d.def || 0); addedDefinitions = true; }
-    });
-    if (addedDefinitions && $('dishes')) { try { localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); } catch (e) {} }
+    if (Array.isArray(o.customIng)) S.customIng = cleanIng(o.customIng);
+    rebuildLists();
+    if (Array.isArray(o.customDishes)) S.customDishes = cleanDishes(o.customDishes);
+    rebuildLists(); ensureDefaults();
     DISHES.forEach(function (d) { if (o.qty && d.id in o.qty) S.qty[d.id] = toInt(o.qty[d.id]); });
     ING.forEach(function (i) {
       if (o.stock && i.id in o.stock) S.stock[i.id] = toInt(o.stock[i.id]);
@@ -342,8 +397,7 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
   }
   try { var raw = localStorage.getItem(KEY); if (raw) merge(JSON.parse(raw)); } catch (e) {}
   function save() {
-    S.customIngredients = customIngredients; S.customDishes = customDishes;
-    try { localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); } catch (e) {}
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
     if (!cloud || !cloudReady || applyingCloud) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async function () {
@@ -362,11 +416,9 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
       var result = await cloud.from('saloon_state').select('state').eq('id', REMOTE_ID).maybeSingle();
       if (result.error) throw result.error;
       if (result.data && result.data.state && Object.keys(result.data.state).length) {
-        var beforeDefs = ING.length + DISHES.length;
         applyingCloud = true; merge(result.data.state); applyingCloud = false;
         lastRemoteJson = JSON.stringify(S);
         try { localStorage.setItem(KEY, lastRemoteJson); } catch (e) {}
-        if (ING.length + DISHES.length !== beforeDefs) { location.reload(); return; }
         sync(); update();
       } else {
         var initial = await cloud.from('saloon_state').upsert({ id: REMOTE_ID, state: S, updated_at: new Date().toISOString() }, { onConflict: 'id' });
@@ -377,10 +429,8 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
       cloudChannel = cloud.channel('saloon-state-live').on('postgres_changes', { event: '*', schema: 'public', table: 'saloon_state', filter: 'id=eq.' + REMOTE_ID }, function (payload) {
         if (!payload.new || !payload.new.state) return;
         var incoming = JSON.stringify(payload.new.state); if (incoming === lastRemoteJson) return;
-        var beforeDefs = ING.length + DISHES.length;
         applyingCloud = true; merge(payload.new.state); applyingCloud = false; lastRemoteJson = JSON.stringify(S);
-        try { localStorage.setItem(KEY, lastRemoteJson); localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); } catch (e) {}
-        if (ING.length + DISHES.length !== beforeDefs) { location.reload(); return; }
+        try { localStorage.setItem(KEY, lastRemoteJson); } catch (e) {}
         sync(); update(); setCloudStatus('☁ Получено обновление от сотрудника.');
       }).subscribe(function (status) { if (status === 'SUBSCRIBED') setCloudStatus('☁ Общая синхронизация включена. Все подключённые сотрудники видят общие данные.'); else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setCloudStatus('Ошибка канала синхронизации: ' + status); });
     } catch (e) { cloudReady = false; setCloudStatus('Не удалось подключиться к Supabase: ' + (e.message || e) + '. Проверь SQL и Realtime.'); }
@@ -403,115 +453,230 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
     return e;
   }
   function $(id) { return document.getElementById(id); }
-  function makeId(prefix, name) {
-    var base = String(name).toLowerCase().replace(/[^a-zа-яё0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 35) || 'item';
-    var id = prefix + '-' + base, n = 2;
-    while (ING.some(function (i) { return i.id === id; }) || DISHES.some(function (d) { return d.id === id; })) id = prefix + '-' + base + '-' + n++;
-    return id;
-  }
-  function persistDefinitionsAndReload() {
-    S.customIngredients = customIngredients; S.customDishes = customDishes;
-    try { localStorage.setItem('saloonKitchenCustomV1', JSON.stringify({ ingredients: customIngredients, dishes: customDishes })); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
-    if (cloud && cloudReady && !applyingCloud) {
-      cloud.from('saloon_state').upsert({ id: REMOTE_ID, state: S, updated_at: new Date().toISOString() }, { onConflict: 'id' }).then(function (r) {
-        if (r.error) setCloudStatus('Не удалось сохранить новые записи в облако: ' + r.error.message);
-        setTimeout(function () { location.reload(); }, 250);
-      }).catch(function () { setTimeout(function () { location.reload(); }, 250); });
-    } else { location.reload(); }
-  }
-  $('ingredientForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var name = $('newIngName').value.trim(), group = $('newIngGroup').value.trim() || 'Прочее', rawPrice = $('newIngPrice').value.trim();
-    if (!name) return;
-    if (ING.some(function (i) { return i.name.toLowerCase() === name.toLowerCase(); })) { $('ingredientStatus').textContent = 'Такой ингредиент уже есть в списке.'; return; }
-    var price = rawPrice === '' ? null : Number(rawPrice);
-    if (price !== null && (!isFinite(price) || price < 0)) { $('ingredientStatus').textContent = 'Укажи цену от 0 или оставь поле пустым.'; return; }
-    var item = { id: makeId('custom-ing', name), name: name, group: group, price: price };
-    customIngredients.push(item); ING.push(item); BY[item.id] = item; S.stock[item.id] = 0; S.price[item.id] = price;
-    $('ingredientStatus').textContent = 'Ингредиент добавлен.'; persistDefinitionsAndReload();
-  });
-  $('recipeForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var name = $('newRecipeName').value.trim(), cat = $('newRecipeCat').value.trim() || 'Еда';
-    var rawLines = $('newRecipeItems').value.split(/\n+/).map(function (line) { return line.trim(); }).filter(Boolean), items = [], errors = [];
-    rawLines.forEach(function (line) {
-      var m = line.match(/^(.+?)\s*(?:—|–|-|:)\s*(\d+(?:[.,]\d+)?)\s*$/);
-      if (!m) { errors.push('Не удалось разобрать строку: ' + line); return; }
-      var ingName = m[1].trim(), amount = Number(m[2].replace(',', '.'));
-      var found = ING.find(function (i) { return i.name.toLowerCase() === ingName.toLowerCase(); });
-      if (!found) { errors.push('Нет ингредиента «' + ingName + '» — сначала добавь его в форме слева.'); return; }
-      if (!(amount > 0) || !isFinite(amount)) { errors.push('Количество должно быть больше нуля: ' + line); return; }
-      var existing = items.find(function (it) { return it[0] === found.id; });
-      if (existing) existing[1] += amount; else items.push([found.id, amount]);
-    });
-    if (!name) errors.push('Впиши название блюда.');
-    if (!items.length && !errors.length) errors.push('Добавь хотя бы один ингредиент.');
-    if (errors.length) { $('recipeStatus').textContent = errors.join(' '); return; }
-    if (DISHES.some(function (d) { return d.name.toLowerCase() === name.toLowerCase(); })) { $('recipeStatus').textContent = 'Блюдо с таким названием уже есть.'; return; }
-    var dish = { id: makeId('custom-dish', name), cat: cat, name: name, def: 0, items: items };
-    customDishes.push(dish); DISHES.push(dish); S.qty[dish.id] = 0;
-    $('recipeStatus').textContent = 'Рецепт добавлен.'; persistDefinitionsAndReload();
-  });
 
   var refs = { dish: {}, row: {} };
+  var renderedSig = null;
+
+  function arm(btn, action) {
+    var orig = btn.textContent, t;
+    btn.addEventListener('click', function () {
+      if (btn.hasAttribute('data-armed')) {
+        clearTimeout(t); btn.removeAttribute('data-armed'); btn.textContent = orig; action();
+      } else {
+        btn.setAttribute('data-armed', '1'); btn.textContent = 'Точно?';
+        t = setTimeout(function () { btn.removeAttribute('data-armed'); btn.textContent = orig; }, 3500);
+      }
+    });
+  }
+  function uid(p) { return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function commitStructure() { rebuildLists(); ensureDefaults(); save(); sync(); update(); }
 
   /* Блюда */
   var dishRoot = $('dishes');
-  var cats = [];
-  DISHES.forEach(function (d) { if (cats.indexOf(d.cat) < 0) cats.push(d.cat); });
-  cats.forEach(function (cat) {
-    dishRoot.appendChild(el('h3', { 'class': 'cat', text: cat }));
-    var grid = el('div', { 'class': 'dish-grid' });
-    DISHES.filter(function (d) { return d.cat === cat; }).forEach(function (d) {
-      var recipe = el('ul', { 'class': 'recipe' });
-      d.items.forEach(function (it) {
-        var li = el('li'); li.appendChild(el('b', { text: it[1] })); li.appendChild(document.createTextNode(BY[it[0]].name.toLowerCase()));
-        recipe.appendChild(li);
+  function renderDishes() {
+    dishRoot.textContent = ''; refs.dish = {};
+    var cats = [];
+    DISHES.forEach(function (d) { if (cats.indexOf(d.cat) < 0) cats.push(d.cat); });
+    cats.forEach(function (cat) {
+      dishRoot.appendChild(el('h3', { 'class': 'cat', text: cat }));
+      var grid = el('div', { 'class': 'dish-grid' });
+      DISHES.filter(function (d) { return d.cat === cat; }).forEach(function (d) {
+        var recipe = el('ul', { 'class': 'recipe' });
+        d.items.forEach(function (it) {
+          var li = el('li'); li.appendChild(el('b', { text: it[1] })); li.appendChild(document.createTextNode((BY[it[0]] ? BY[it[0]].name : it[0]).toLowerCase()));
+          recipe.appendChild(li);
+        });
+        var minus = el('button', { type: 'button', 'aria-label': 'Меньше: ' + d.name, text: '−' });
+        var plus = el('button', { type: 'button', 'aria-label': 'Больше: ' + d.name, text: '+' });
+        var input = el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', id: 'q-' + d.id, 'aria-label': 'Порций: ' + d.name });
+        var stepper = el('div', { 'class': 'stepper' }, minus, input, plus);
+        var cost = el('div', { 'class': 'cost' });
+        var can = el('div', { 'class': 'can' });
+        var card = el('article', { 'class': 'dish' }, el('h4', { text: d.name }), recipe, el('div', { 'class': 'dish-row' }, stepper, cost), can);
+        if (d.custom) {
+          var ed = el('button', { type: 'button', 'class': 'mini', text: 'Изменить' });
+          var del = el('button', { type: 'button', 'class': 'mini', text: 'Удалить блюдо' });
+          card.appendChild(el('div', { 'class': 'mini-actions' }, ed, del));
+          ed.addEventListener('click', function () { startEditDish(d.id); });
+          arm(del, function () {
+            S.customDishes = S.customDishes.filter(function (x) { return x.id !== d.id; });
+            delete S.qty[d.id];
+            if (editingDish === d.id) resetDishForm();
+            commitStructure();
+          });
+        }
+        grid.appendChild(card);
+        refs.dish[d.id] = { input: input, cost: cost, can: can };
+        function set(v) { S.qty[d.id] = toInt(v); save(); update(); }
+        minus.addEventListener('click', function () { set((S.qty[d.id] || 0) - 1); input.value = S.qty[d.id]; });
+        plus.addEventListener('click', function () { set((S.qty[d.id] || 0) + 1); input.value = S.qty[d.id]; });
+        input.addEventListener('input', function () { set(input.value); });
+        input.addEventListener('blur', function () { input.value = S.qty[d.id]; });
       });
-      var minus = el('button', { type: 'button', 'aria-label': 'Меньше: ' + d.name, text: '−' });
-      var plus = el('button', { type: 'button', 'aria-label': 'Больше: ' + d.name, text: '+' });
-      var input = el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', id: 'q-' + d.id, 'aria-label': 'Порций: ' + d.name });
-      var stepper = el('div', { 'class': 'stepper' }, minus, input, plus);
-      var cost = el('div', { 'class': 'cost' });
-      var can = el('div', { 'class': 'can' });
-      grid.appendChild(el('article', { 'class': 'dish' }, el('h4', { text: d.name }), recipe, el('div', { 'class': 'dish-row' }, stepper, cost), can));
-      refs.dish[d.id] = { input: input, cost: cost, can: can };
-      function set(v) { S.qty[d.id] = toInt(v); save(); update(); }
-      minus.addEventListener('click', function () { set((S.qty[d.id] || 0) - 1); input.value = S.qty[d.id]; });
-      plus.addEventListener('click', function () { set((S.qty[d.id] || 0) + 1); input.value = S.qty[d.id]; });
-      input.addEventListener('input', function () { set(input.value); });
-      input.addEventListener('blur', function () { input.value = S.qty[d.id]; });
+      dishRoot.appendChild(grid);
     });
-    dishRoot.appendChild(grid);
-  });
+  }
 
   /* Таблица ингредиентов */
   var body = $('ingBody');
-  var groups = [];
-  ING.forEach(function (i) { if (groups.indexOf(i.group) < 0) groups.push(i.group); });
-  groups.forEach(function (g) {
-    var gt = el('th', { colspan: '6', text: g });
-    body.appendChild(el('tr', { 'class': 'grp' }, gt));
-    ING.filter(function (i) { return i.group === g; }).forEach(function (i) {
-      var nameTd = el('td', null, document.createTextNode(i.name));
-      if (i.sector) nameTd.appendChild(el('small', { text: 'сектор ' + i.sector }));
-      var need = el('td'), short = el('td', { 'class': 'short' }), sum = el('td');
-      var stockIn = el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', id: 's-' + i.id, 'aria-label': 'На складе: ' + i.name });
-      var priceIn = el('input', { type: 'number', min: '0', step: '0.01', inputmode: 'decimal', id: 'p-' + i.id, placeholder: 'впишите', 'aria-label': 'Цена за штуку: ' + i.name });
-      var tr = el('tr', null, nameTd, need, el('td', { 'class': 'in' }, stockIn), short, el('td', { 'class': 'in' }, priceIn), sum);
-      body.appendChild(tr);
-      refs.row[i.id] = { tr: tr, need: need, short: short, sum: sum, stockIn: stockIn, priceIn: priceIn };
-      stockIn.addEventListener('input', function () { S.stock[i.id] = toInt(stockIn.value); save(); update(); });
-      stockIn.addEventListener('blur', function () { stockIn.value = S.stock[i.id] || ''; });
-      priceIn.addEventListener('input', function () {
-        var v = priceIn.value;
-        S.price[i.id] = (v === '' || !isFinite(Number(v)) || Number(v) < 0) ? null : Number(v);
-        save(); update();
+  function renderTable() {
+    body.textContent = ''; refs.row = {};
+    var groups = [];
+    ING.forEach(function (i) { if (groups.indexOf(i.group) < 0) groups.push(i.group); });
+    groups.forEach(function (g) {
+      var gt = el('th', { colspan: '6', text: g });
+      body.appendChild(el('tr', { 'class': 'grp' }, gt));
+      ING.filter(function (i) { return i.group === g; }).forEach(function (i) {
+        var nameTd = el('td', null, document.createTextNode(i.name));
+        if (i.sector) nameTd.appendChild(el('small', { text: 'сектор ' + i.sector }));
+        if (i.custom) {
+          var ed = el('button', { type: 'button', 'class': 'mini', text: 'Изменить' });
+          var del = el('button', { type: 'button', 'class': 'mini', text: 'Удалить' });
+          nameTd.appendChild(el('div', { 'class': 'mini-actions' }, ed, del));
+          ed.addEventListener('click', function () { startEditIng(i.id); });
+          arm(del, function () {
+            var users = DISHES.filter(function (d) { return d.items.some(function (it) { return it[0] === i.id; }); });
+            if (users.length) { flash('ingStatus', 'Нельзя удалить «' + i.name + '»: он используется в блюде «' + users[0].name + '». Сначала измените или удалите блюдо.'); return; }
+            S.customIng = S.customIng.filter(function (x) { return x.id !== i.id; });
+            delete S.stock[i.id]; delete S.price[i.id];
+            if (editingIng === i.id) resetIngForm();
+            commitStructure();
+          });
+        }
+        var need = el('td'), short = el('td', { 'class': 'short' }), sum = el('td');
+        var stockIn = el('input', { type: 'number', min: '0', step: '1', inputmode: 'numeric', id: 's-' + i.id, 'aria-label': 'На складе: ' + i.name });
+        var priceIn = el('input', { type: 'number', min: '0', step: '0.01', inputmode: 'decimal', id: 'p-' + i.id, placeholder: 'впишите', 'aria-label': 'Цена за штуку: ' + i.name });
+        var tr = el('tr', null, nameTd, need, el('td', { 'class': 'in' }, stockIn), short, el('td', { 'class': 'in' }, priceIn), sum);
+        body.appendChild(tr);
+        refs.row[i.id] = { tr: tr, need: need, short: short, sum: sum, stockIn: stockIn, priceIn: priceIn };
+        stockIn.addEventListener('input', function () { S.stock[i.id] = toInt(stockIn.value); save(); update(); });
+        stockIn.addEventListener('blur', function () { stockIn.value = S.stock[i.id] || ''; });
+        priceIn.addEventListener('input', function () {
+          var v = priceIn.value;
+          S.price[i.id] = (v === '' || !isFinite(Number(v)) || Number(v) < 0) ? null : Number(v);
+          save(); update();
+        });
       });
     });
+  }
+
+  /* Формы */
+  var dfItems = $('dfItems'), editingDish = null, editingIng = null;
+  function uniq(arr) { var o = []; arr.forEach(function (x) { if (o.indexOf(x) < 0) o.push(x); }); return o; }
+  function fillOptions(sel, current) {
+    sel.textContent = '';
+    uniq(ING.map(function (i) { return i.group; })).forEach(function (g) {
+      var og = el('optgroup', { label: g });
+      ING.filter(function (i) { return i.group === g; }).forEach(function (i) { og.appendChild(el('option', { value: i.id, text: i.name })); });
+      sel.appendChild(og);
+    });
+    if (current && BY[current]) sel.value = current;
+  }
+  function addItemRow(id, qty) {
+    var sel = el('select', { 'class': 'field', 'aria-label': 'Ингредиент' });
+    fillOptions(sel, id);
+    var q = el('input', { type: 'number', min: '1', step: '1', inputmode: 'numeric', 'class': 'field', value: String(qty || 1), 'aria-label': 'Количество на порцию' });
+    var rm = el('button', { type: 'button', 'class': 'btn quiet', 'aria-label': 'Убрать ингредиент', text: '×' });
+    var row = el('div', { 'class': 'item-row' }, sel, q, rm);
+    rm.addEventListener('click', function () { dfItems.removeChild(row); });
+    dfItems.appendChild(row);
+  }
+  function refreshForms() {
+    var cl = $('catList'); cl.textContent = '';
+    uniq(DISHES.map(function (d) { return d.cat; })).forEach(function (c) { cl.appendChild(el('option', { value: c })); });
+    var gl = $('groupList'); gl.textContent = '';
+    uniq(ING.map(function (i) { return i.group; })).forEach(function (g) { gl.appendChild(el('option', { value: g })); });
+    Array.prototype.forEach.call(dfItems.querySelectorAll('select'), function (sel) { fillOptions(sel, sel.value); });
+  }
+  function resetDishForm() {
+    editingDish = null;
+    $('dfName').value = ''; $('dfCat').value = '';
+    dfItems.textContent = ''; addItemRow();
+    $('dfSave').textContent = 'Добавить блюдо'; $('dfCancel').hidden = true;
+  }
+  function startEditDish(id) {
+    var d = null; S.customDishes.forEach(function (x) { if (x.id === id) d = x; });
+    if (!d) return;
+    editingDish = id;
+    $('dfName').value = d.name; $('dfCat').value = d.cat;
+    dfItems.textContent = '';
+    d.items.forEach(function (it) { addItemRow(it[0], it[1]); });
+    $('dfSave').textContent = 'Сохранить изменения'; $('dfCancel').hidden = false;
+    var box = $('dishForm'); box.open = true; box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('dfName').focus();
+  }
+  function resetIngForm() {
+    editingIng = null;
+    $('ifName').value = ''; $('ifGroup').value = ''; $('ifPrice').value = ''; $('ifStock').value = '';
+    $('ifSave').textContent = 'Добавить ингредиент'; $('ifCancel').hidden = true;
+  }
+  function startEditIng(id) {
+    var i = BY[id]; if (!i || !i.custom) return;
+    editingIng = id;
+    $('ifName').value = i.name; $('ifGroup').value = i.group;
+    $('ifPrice').value = S.price[id] == null ? '' : S.price[id];
+    $('ifStock').value = S.stock[id] || '';
+    $('ifSave').textContent = 'Сохранить изменения'; $('ifCancel').hidden = false;
+    var box = $('ingForm'); box.open = true; box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('ifName').focus();
+  }
+
+  $('dfAddItem').addEventListener('click', function () { addItemRow(); });
+  $('dfCancel').addEventListener('click', resetDishForm);
+  $('ifCancel').addEventListener('click', resetIngForm);
+
+  $('dfSave').addEventListener('click', function () {
+    var name = $('dfName').value.trim();
+    if (!name) { flash('dfStatus', 'Впишите название блюда.'); return; }
+    var cat = $('dfCat').value.trim() || 'Другое';
+    var dup = DISHES.some(function (d) { return d.id !== editingDish && d.name.toLowerCase() === name.toLowerCase(); });
+    if (dup) { flash('dfStatus', 'Блюдо с таким названием уже есть.'); return; }
+    var map = {}, order = [];
+    Array.prototype.forEach.call(dfItems.querySelectorAll('.item-row'), function (row) {
+      var id = row.querySelector('select').value, q = toInt(row.querySelector('input').value);
+      if (!id || !BY[id] || q < 1) return;
+      if (!(id in map)) { map[id] = 0; order.push(id); }
+      map[id] += q;
+    });
+    if (!order.length) { flash('dfStatus', 'Добавьте хотя бы один ингредиент с количеством от 1.'); return; }
+    var items = order.map(function (id) { return [id, map[id]]; });
+    if (editingDish) {
+      S.customDishes = S.customDishes.map(function (d) { return d.id === editingDish ? { id: d.id, cat: cat, name: name, items: items, custom: true } : d; });
+    } else {
+      var id = uid('d_');
+      S.customDishes = S.customDishes.concat([{ id: id, cat: cat, name: name, items: items, custom: true }]);
+      S.qty[id] = 0;
+    }
+    var wasEdit = !!editingDish;
+    resetDishForm(); commitStructure();
+    flash('dfStatus', wasEdit ? 'Блюдо обновлено.' : 'Блюдо добавлено. Задайте число порций в карточке.');
+  });
+
+  $('ifSave').addEventListener('click', function () {
+    var name = $('ifName').value.trim();
+    if (!name) { flash('ifStatus', 'Впишите название ингредиента.'); return; }
+    var group = $('ifGroup').value.trim() || 'Прочее';
+    var dup = ING.some(function (i) { return i.id !== editingIng && i.name.toLowerCase() === name.toLowerCase(); });
+    if (dup) { flash('ifStatus', 'Ингредиент с таким названием уже есть.'); return; }
+    var pv = $('ifPrice').value.trim().replace(',', '.'), price = pv === '' ? null : Number(pv);
+    if (price !== null && (!isFinite(price) || price < 0)) { flash('ifStatus', 'Цена должна быть числом от нуля.'); return; }
+    var stock = toInt($('ifStock').value), id;
+    if (editingIng) {
+      id = editingIng;
+      S.customIng = S.customIng.map(function (i) { return i.id === id ? { id: id, name: name, group: group, custom: true } : i; });
+    } else {
+      id = uid('i_');
+      S.customIng = S.customIng.concat([{ id: id, name: name, group: group, custom: true }]);
+    }
+    S.price[id] = price; S.stock[id] = stock;
+    var wasEdit = !!editingIng;
+    resetIngForm(); commitStructure();
+    flash('ifStatus', wasEdit ? 'Ингредиент обновлён.' : 'Ингредиент добавлен. Теперь его можно выбрать в рецептах.');
   });
 
   function sync() {
+    var sig = JSON.stringify([S.customIng, S.customDishes]);
+    if (sig !== renderedSig) { renderedSig = sig; renderDishes(); renderTable(); refreshForms(); }
     DISHES.forEach(function (d) { refs.dish[d.id].input.value = S.qty[d.id]; });
     ING.forEach(function (i) {
       var r = refs.row[i.id];
@@ -646,6 +811,7 @@ details.data p { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
 
   sync();
   update();
+  resetDishForm();
   /* Cloud status */
   cloudStatus = document.createElement('div');
   cloudStatus.id = 'cloudStatus';
